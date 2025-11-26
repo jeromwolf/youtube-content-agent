@@ -1,43 +1,44 @@
 # YouTube Content Agent 🎬
 
-This agent helps you create high-quality Korean YouTube content from English videos.
+이 에이전트는 영어 유튜브 영상을 고품질의 한국어 콘텐츠로 변환해주는 도구입니다.
 
-## 🚀 Project Background & Vision
+## 🚀 프로젝트 배경 및 비전 (Project Background & Vision)
 
-**"Too much information, too little time."**
+**"정보는 넘쳐나는데, 시간은 부족하다."**
 
-English content on YouTube is exploding with valuable information, but consuming it all—especially with language barriers—is time-consuming. We need a way to quickly digest high-quality global knowledge.
+유튜브에는 전 세계의 유용한 정보가 쏟아지고 있지만, 언어의 장벽과 시간 부족으로 인해 이 모든 것을 소화하기는 어렵습니다. 우리는 양질의 글로벌 지식을 빠르고 효율적으로 습득할 방법이 필요합니다.
 
-**AI ON** is a project designed to bridge this gap. It acts as an **AI Curator**, selecting excellent content and providing concise, engaging summaries in Korean.
+**AI ON** 프로젝트는 이러한 문제를 해결하기 위해 시작되었습니다. 이 프로젝트는 **AI 큐레이터**로서 훌륭한 콘텐츠를 선별하고, 이를 한국어로 요약하여 쉽고 재미있게 전달하는 것을 목표로 합니다.
 
-### Key Goals:
-- **Efficiency**: Drastically reduce the time needed to consume English video content through smart summarization.
-- **Expansion**: While starting with YouTube, the roadmap includes expanding to **academic papers** and technical documentation.
-- **Service Vision**: To build an "AI ON" service that delivers the world's best knowledge to you, translated and summarized instantly.
+### 핵심 목표 (Key Goals):
+- **효율성 (Efficiency)**: 스마트한 요약을 통해 영어 영상 콘텐츠를 소비하는 데 드는 시간을 획기적으로 줄입니다.
+- **확장성 (Expansion)**: 유튜브를 시작으로, 향후에는 **논문(Academic Papers)** 및 전문 기술 문서 요약까지 확장할 계획입니다.
+- **서비스 비전 (Service Vision)**: 전 세계의 최고급 지식을 실시간으로 번역하고 요약하여 제공하는 "AI ON" 서비스를 구축합니다.
 
-## Features
-- **Transcript Extraction**: Automatically pulls English transcripts from YouTube videos.
-- **AI Scriptwriting**: Uses GPT-4o to summarize and rewrite the content into an engaging Korean script.
-- **Voiceover Generation**: Uses OpenAI's TTS (Text-to-Speech) to generate professional-grade voiceovers.
+## 주요 기능 (Features)
+- **자막 추출 (Transcript Extraction)**: 유튜브 영상에서 영어 자막을 자동으로 추출합니다.
+- **AI 대본 작성 (AI Scriptwriting)**: GPT-4o를 활용하여 내용을 요약하고, 몰입감 있는 한국어 유튜브 대본으로 재작성합니다.
+- **음성 생성 (Voiceover Generation)**: OpenAI의 TTS(Text-to-Speech)를 사용하여 전문 성우 수준의 내레이션을 생성합니다.
+- **썸네일 & 메타데이터 생성**: 클릭을 유도하는 썸네일과 SEO에 최적화된 제목, 태그를 자동으로 생성합니다.
 
-## Setup
+## 설치 및 실행 (Setup)
 
-1.  **Install Dependencies**:
+1.  **패키지 설치**:
     ```bash
     pip install -r requirements.txt
     ```
 
-2.  **Run the Agent**:
+2.  **에이전트 실행**:
     ```bash
     streamlit run app.py
     ```
 
-3.  **Usage**:
-    - Enter your OpenAI API Key in the sidebar.
-    - Paste a YouTube URL.
-    - Click "Generate Content".
-    - Download the script and audio!
+3.  **사용 방법**:
+    - 사이드바에 OpenAI API Key를 입력하세요.
+    - 변환하고 싶은 유튜브 URL을 붙여넣으세요.
+    - "Generate Content" 버튼을 클릭하세요.
+    - 생성된 대본과 음성 파일을 다운로드하세요!
 
-## Notes
-- You need an OpenAI API Key with access to GPT-4 and TTS models.
-- The audio generation is limited to the first 4096 characters in this version to manage costs.
+## 참고 사항 (Notes)
+- GPT-4o 및 TTS 모델을 사용하기 위해 OpenAI API Key가 필요합니다.
+- 비용 관리를 위해 이 버전에서는 음성 생성이 대본의 앞부분(약 4096자)으로 제한될 수 있습니다.
