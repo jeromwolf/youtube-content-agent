@@ -1,0 +1,168 @@
+import streamlit as st
+from agent import YouTubeContentAgent
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Page Config
+st.set_page_config(
+    page_title="YouTube Content Agent",
+    page_icon="🎬",
+    layout="wide"
+)
+
+# Custom CSS for "Premium" feel
+st.markdown("""
+<style>
+    .main {
+        background-color: #f5f5f5;
+    }
+    .stButton>button {
+        width: 100%;
+        background-color: #FF0000;
+        color: white;
+        border-radius: 10px;
+        height: 50px;
+        font-weight: bold;
+    }
+    .stTextArea>div>div>textarea {
+        background-color: #ffffff;
+        border-radius: 10px;
+    }
+    h1 {
+        color: #2c3e50;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Sidebar for API Key
+with st.sidebar:
+    st.header("⚙️ Settings")
+    
+    # Try to get key from environment
+    env_api_key = os.getenv("OPENAI_API_KEY")
+    
+    api_key = st.text_input(
+        "OpenAI API Key", 
+        value=env_api_key if env_api_key else "",
+        type="password", 
+        help="Enter your OpenAI API key to power the agent."
+    )
+    
+    if not api_key:
+        st.warning("Please enter your API Key to proceed.")
+        st.stop()
+
+# Main Content
+st.title("🎬 YouTube Content Agent")
+st.markdown("### Turn English Videos into High-Quality Korean Content")
+
+# Input Section
+url = st.text_input("Paste YouTube URL here:", placeholder="https://www.youtube.com/watch?v=...")
+
+if st.button("🚀 Generate Content"):
+    if not url:
+        st.error("Please provide a valid YouTube URL.")
+    else:
+        agent = YouTubeContentAgent(api_key)
+        
+        with st.spinner("🕵️‍♂️ Analyzing video and extracting transcript..."):
+            try:
+                # We'll do this in steps to show progress
+                video_id = agent.extract_video_id(url)
+                if not video_id:
+                    st.error("Invalid URL")
+                    st.stop()
+                
+                transcript = agent.get_transcript(video_id)
+                st.success("✅ Transcript extracted!")
+                with st.expander("View Original Transcript (English)"):
+                    st.write(transcript[:1000] + "...")
+            except Exception as e:
+                st.error(f"Error extracting transcript: {e}")
+                st.stop()
+
+        with st.spinner("✍️ Writing engaging Korean script..."):
+            try:
+                script = agent.generate_script(transcript)
+                st.success("✅ Script generated!")
+            except Exception as e:
+                st.error(f"Error generating script: {e}")
+                st.stop()
+
+        # Metadata Generation
+        metadata = {}
+        with st.spinner("📈 Generating SEO metadata..."):
+            try:
+                metadata = agent.generate_metadata(script)
+                # Ensure it's a dict (in case of fallback string return, though agent handles it)
+                if isinstance(metadata, str):
+                     # Fallback parsing if something went wrong and it returned a string
+                     metadata = {"title": "Error", "description": metadata, "tags": "", "thumbnail_text": ""}
+            except Exception as e:
+                st.error(f"Metadata generation failed: {e}")
+                metadata = {"title": "", "description": "", "tags": "", "thumbnail_text": ""}
+
+        # Thumbnail Generation
+        with st.spinner("🎨 Designing viral thumbnail..."):
+            try:
+                thumb_text = metadata.get("thumbnail_text", "Video Summary")
+                thumbnail_url = agent.generate_thumbnail(script, overlay_text=thumb_text)
+            except Exception as e:
+                st.error(f"Thumbnail generation failed: {e}")
+                thumbnail_url = None
+
+        with st.spinner("🎙️ Generating professional voiceover..."):
+            try:
+                audio_data = agent.generate_audio(script)
+                st.success("✅ Audio generated!")
+            except Exception as e:
+                st.error(f"Error generating audio: {e}")
+                audio_data = None
+
+        # Results Display
+        st.divider()
+        
+        # Top Section: Thumbnail & Metadata
+        col_meta, col_thumb = st.columns([1, 1])
+        
+        with col_meta:
+            st.subheader("📈 YouTube Metadata")
+            
+            st.caption("Title")
+            st.text_input("Title", value=metadata.get("title", ""), label_visibility="collapsed")
+            
+            st.caption("Description")
+            st.text_area("Description", value=metadata.get("description", ""), height=150, label_visibility="collapsed")
+            
+            st.caption("Tags")
+            st.text_area("Tags", value=metadata.get("tags", ""), height=100, label_visibility="collapsed")
+            
+        with col_thumb:
+            st.subheader("🖼️ Thumbnail Preview")
+            if thumbnail_url:
+                st.image(thumbnail_url, caption=f"Generated by DALL-E 3 (Text: {metadata.get('thumbnail_text', '')})", use_container_width=True)
+            else:
+                st.info("Thumbnail generation skipped or failed.")
+
+        st.divider()
+
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            st.subheader("📝 Korean Script")
+            st.text_area("Generated Script", script, height=600)
+            st.download_button("Download Script", script, file_name="script.txt")
+
+        with col2:
+            st.subheader("🎧 Voiceover Preview")
+            if audio_data:
+                st.audio(audio_data, format="audio/mp3")
+                st.download_button("Download Audio", audio_data, file_name="voiceover.mp3", mime="audio/mpeg")
+            else:
+                st.warning("Audio generation failed or skipped.")
+            
+            st.info("💡 Tip: You can use this audio directly in your video editor!")
+
