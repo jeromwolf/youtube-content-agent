@@ -1,6 +1,7 @@
 import os
 import json
 from youtube_transcript_api import YouTubeTranscriptApi
+import yt_dlp
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.schema import SystemMessage, HumanMessage
@@ -122,6 +123,10 @@ class YouTubeContentAgent:
            - **Conclusion**: Summary and Call to Action (1 min).
         5. **Formatting**: Use clear markers like [Intro], [Body], [Outro].
         6. **Pronunciation**: Write English proper nouns in **Hangul** (Korean alphabet) to ensure correct pronunciation by TTS (e.g., write "Palantir" as "팔란티어", not "Palantir").
+        7. **Multi-Speaker Strategy**: 
+           - **Check for Dialogue**: Does the video have an interview, a conversation, or distinct guest speakers?
+           - **YES**: You **MUST** use `[Host]` and `[Guest]` markers to separate the voices.
+           - **NO (Monologue)**: If it's just one person talking, use `[Host]` for the main content. However, if they quote someone else extensively, you MAY use `[Guest]` for the quoted part to add variety.
         """
 
         user_prompt = f"""
@@ -133,6 +138,7 @@ class YouTubeContentAgent:
         It should be long enough to create a 5-10 minute video.
         Don't leave out interesting details.
         Remember to write proper nouns in Hangul.
+        **IMPORTANT**: If there are multiple speakers (like an interview), you MUST separate them with [Host] and [Guest]. If it's a monologue, stick to [Host].
         """
 
         messages = [
@@ -159,27 +165,52 @@ class YouTubeContentAgent:
         return text
 
     def generate_audio(self, text, voice="onyx"):
-        """Generates audio from the script using OpenAI TTS, handling long text by chunking."""
+        """Generates audio from the script using OpenAI TTS, handling multi-speaker markers."""
         try:
             # Apply pronunciation fixes first
             text = self.fix_pronunciation(text)
 
-            # OpenAI TTS has a 4096 char limit. We need to chunk the text.
-            # Simple chunking by paragraphs or length.
-            max_chars = 4000
-            chunks = [text[i:i+max_chars] for i in range(0, len(text), max_chars)]
+            # Split text by speaker markers
+            # Regex to find [Host] or [Guest] and the following text
+            segments = re.split(r'(\[(?:Host|Guest)\])', text)
             
             combined_audio = b""
+            current_voice = voice # Default voice
             
-            for chunk in chunks:
-                if not chunk.strip():
+            # OpenAI TTS voices
+            voice_map = {
+                "[Host]": "onyx",   # Deep, narration voice
+                "[Guest]": "nova"   # Softer, distinct voice for contrast
+            }
+
+            for segment in segments:
+                if not segment.strip():
                     continue
-                response = self.client.audio.speech.create(
-                    model="tts-1",
-                    voice=voice,
-                    input=chunk
-                )
-                combined_audio += response.content
+                
+                # Check if the segment is a marker
+                if segment in voice_map:
+                    current_voice = voice_map[segment]
+                    continue
+                
+                # It's text content
+                # Chunking is still needed for long segments within a speaker's turn
+                max_chars = 4000
+                chunks = [segment[i:i+max_chars] for i in range(0, len(segment), max_chars)]
+                
+                for chunk in chunks:
+                    if not chunk.strip():
+                        continue
+                    
+                    # Skip generating audio for markers themselves if they leaked into chunks (unlikely with split)
+                    if chunk.strip() in voice_map: 
+                        continue
+
+                    response = self.client.audio.speech.create(
+                        model="tts-1",
+                        voice=current_voice,
+                        input=chunk
+                    )
+                    combined_audio += response.content
                 
             return combined_audio
         except Exception as e:
@@ -256,6 +287,28 @@ class YouTubeContentAgent:
             return response.data[0].url
         except Exception as e:
             raise Exception(f"Thumbnail generation failed: {str(e)}")
+
+    def download_video(self, url):
+        """Downloads the YouTube video using yt-dlp and returns the file path."""
+        try:
+            # Configure yt-dlp to download the best single file (usually mp4) to a temp folder
+            # We use a unique filename based on video ID to avoid collisions
+            video_id = self.extract_video_id(url)
+            output_template = f"downloads/{video_id}.%(ext)s"
+            
+            ydl_opts = {
+                'format': 'best[ext=mp4]', # Download best mp4 video
+                'outtmpl': output_template,
+                'quiet': True,
+                'no_warnings': True,
+            }
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                filename = ydl.prepare_filename(info)
+                return filename
+        except Exception as e:
+            raise Exception(f"Video download failed: {str(e)}")
 
     def process_video(self, url):
         """Orchestrates the full flow."""

@@ -166,3 +166,31 @@ if st.button("🚀 Generate Content"):
             
             st.info("💡 Tip: You can use this audio directly in your video editor!")
 
+        st.divider()
+        
+        # Video Download Section
+        st.subheader("📥 Download Original Video")
+        
+        # Initialize session state for video path if not exists
+        if "video_path" not in st.session_state:
+            st.session_state.video_path = None
+            
+        if st.button("Prepare Video Download"):
+            with st.spinner("Downloading video to server... This might take a minute."):
+                try:
+                    video_path = agent.download_video(url)
+                    st.session_state.video_path = video_path
+                    st.success("Video is ready! Click the button below to save.")
+                except Exception as e:
+                    st.error(f"Video download failed: {e}")
+        
+        if st.session_state.video_path and os.path.exists(st.session_state.video_path):
+            with open(st.session_state.video_path, "rb") as f:
+                video_bytes = f.read()
+            st.download_button(
+                label="💾 Click to Save Video (MP4)",
+                data=video_bytes,
+                file_name=os.path.basename(st.session_state.video_path),
+                mime="video/mp4"
+            )
+
