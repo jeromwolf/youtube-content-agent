@@ -42,3 +42,6 @@
 ## 참고 사항 (Notes)
 - GPT-4o 및 TTS 모델을 사용하기 위해 OpenAI API Key가 필요합니다.
 - 비용 관리를 위해 이 버전에서는 음성 생성이 대본의 앞부분(약 4096자)으로 제한될 수 있습니다.
+
+---
+**Powered by Antigravity Agent** 🚀
